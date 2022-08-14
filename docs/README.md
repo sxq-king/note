@@ -2,7 +2,7 @@
 
 > 这里包含Java后端学习的一系列个人笔记
 
-## - [java核心技术](/ProjectMD/java核心技术.md)
+## - [java核心技术](/ProjectMD/Java核心技术.md)
 
 ## - [MySQL](/ProjectMD/MySQL数据库笔记.md)
 

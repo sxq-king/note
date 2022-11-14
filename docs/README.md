@@ -11,3 +11,5 @@
 ## - [Git基本操作](ProjectMD/Git基本操作.md)
 
 ## - [Redis](/ProjectMD/Redis.md)
+
+## - [Idea使用技巧](/ProjectMD/idea使用技巧.md)

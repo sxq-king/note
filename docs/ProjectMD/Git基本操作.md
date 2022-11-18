@@ -72,7 +72,7 @@ git merge 分支名 | 把指定的分支合并到当前分支上
 其他不用管直接点击创建
 
 
-远程库操作
+## 远程库操作
 命令 | 作用
 ---|---
 git remote -v | 查看当前所有远程地址别名
@@ -85,5 +85,156 @@ git pull 远程库地址别名 远程分支名 | 将远程仓库对于分支最�
 邀请团队协作
 
 
+## Git连接GitHub
 
+> 因为Git是分布式版本控制系统，所以需要填写用户名和邮箱作为一个标识
 
+Github支持两种同步方式`“https”`和`“ssh”`。
+
+如果使用`https`很简单基本不需要配置就可以使用，但是每次提交代码和下载代码时都需要输入用户名和密码。
+
+如果使用`ssh`方式就需要客户端先生成一个密钥对，即一个公钥一个私钥。然后还需要把公钥放到githib的服务器上。
+
+- 如果配置过git忘记配置信息
+
+```.java
+$ git config --list //查看git全局配置
+diff.astextplain.textconv=astextplain
+filter.lfs.clean=git-lfs clean -- %f
+filter.lfs.smudge=git-lfs smudge -- %f
+filter.lfs.process=git-lfs filter-process
+filter.lfs.required=true
+http.sslbackend=openssl
+http.sslcainfo=D:/Program Files/Git/mingw64/ssl/certs/ca-bundle.crt
+core.autocrlf=true
+core.fscache=true
+core.symlinks=true
+pull.rebase=false
+credential.helper=manager-core
+credential.https://dev.azure.com.usehttppath=true
+init.defaultbranch=master
+user.name=sxq	//用户名
+user.email=996957240@qq.com  //邮箱
+
+```
+
+- 没有配置过git信息执行以下命令
+
+```.java
+git config --global user.name "XXXX"  用户名标识  ---- 实际也可以填写您的github仓库的名称
+
+git config --global user.email "xxxx@xxx.com"  邮箱标识  -------可以填写github仓库的邮箱
+```
+
+#### 开始连接关键操作了
+
+1. 配置SSH KEY.
+
+   > 在用户主目录下，看看有没有.ssh目录，如果有，再看看这个目录下有没有`id_rsa`和`id_rsa.pub`这两个文件
+
+```.JAVA
+- 用户主目录 C:\Users\当前用户\.ssh
+```
+
+![](/images/用户主目录.png)
+
+> 如果有的话，直接跳过此如下命令，如果没有的话，打开命令行，输入如下命令：
+
+```.java
+ssh-keygen -t rsa  //--创建秘钥
+```
+
+一直回车即可。
+
+- id_rsa 是密匙
+
+- id_rsa.pub是公匙
+
+使用记事本打开复制公匙（ctrl+a，ctrl+c全选）
+
+2. 你的远程仓库配置（github为例）
+
+   > 登录github，github右上角你账号的头像选择settings ==> SSH and GPG keys ==> New SSH key
+   >
+   > Title 可以任意填写 ==> Key就填你复制的id_rsa.pub ==> 最后 Add New key。配置完成
+
+3.  查看远程仓库
+
+```.java
+git remote      //--git查看远程仓库信息
+//出现一下信息说明没有远程库
+$ git remote
+fatal: not a git repository (or any of the parent directories): .git
+```
+
+远程仓库创建两种方式
+
+- git本地创建然后提交同时创建
+- 通过github直接new repository 创建完成会出现以下信息
+
+![](/images/github创建仓库信息.png)
+
+第一种是没有本地库初始化本地库直接提交并合并到远程仓库。
+
+```java
+sxq@DESKTOP-ILEV43G MINGW64 ~/Desktop
+$ mkdir test //我测试直接创建一个test空文件夹
+
+sxq@DESKTOP-ILEV43G MINGW64 ~/Desktop
+$ cd test
+
+sxq@DESKTOP-ILEV43G MINGW64 ~/Desktop/test
+$ echo "# test" >> README.md //写一些你仓库的介绍信息
+
+sxq@DESKTOP-ILEV43G MINGW64 ~/Desktop/test
+$ ll
+total 1
+-rw-r--r-- 1 sxq 197609 7 Nov 18 11:33 README.md
+
+sxq@DESKTOP-ILEV43G MINGW64 ~/Desktop/test
+$ git init
+git commit -m "first commit"
+git branch -M master
+git remote add origin https://github.com/sxq-king/test.git
+git push -u origin masterInitialized empty Git repository in C:/Users/sxq/Desktop/test/.git/
+//以上五个个命令直接复制github提供的
+sxq@DESKTOP-ILEV43G MINGW64 ~/Desktop/test (master)
+$ git add README.md
+warning: LF will be replaced by CRLF in README.md.
+The file will have its original line endings in your working directory
+
+sxq@DESKTOP-ILEV43G MINGW64 ~/Desktop/test (master)
+$ git commit -m "first commit"
+[master (root-commit) f63d112] first commit
+ 1 file changed, 1 insertion(+)
+ create mode 100644 README.md
+
+sxq@DESKTOP-ILEV43G MINGW64 ~/Desktop/test (master)
+$ git branch -M master
+
+sxq@DESKTOP-ILEV43G MINGW64 ~/Desktop/test (master)
+$ git remote add origin https://github.com/sxq-king/test.git
+
+sxq@DESKTOP-ILEV43G MINGW64 ~/Desktop/test (master)
+$ git push -u origin master
+Enumerating objects: 3, done.
+Counting objects: 100% (3/3), done.
+Writing objects: 100% (3/3), 210 bytes | 210.00 KiB/s, done.
+Total 3 (delta 0), reused 0 (delta 0), pack-reused 0
+To https://github.com/sxq-king/test.git
+ * [new branch]      master -> master
+Branch 'master' set up to track remote branch 'master' from 'origin'.
+
+sxq@DESKTOP-ILEV43G MINGW64 ~/Desktop/test (master)
+
+```
+
+第二种是本地已经有仓库连接到远程。
+
+```.java
+git remote add origin https://github.com/sxq-king/test.git //添加远程库
+git branch -M master	//创建master分支
+git push -u origin master //推送到master分支
+```
+
+over完成

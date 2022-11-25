@@ -1,5 +1,4 @@
 - [首页](/)
-- [快速入门](快速入门.md "从这里开始")
 - [JAVA核心技术](ProjectMD/Java核心技术.md)
 - [MYSQL超全](ProjectMD/MySQL数据库笔记.md)
 - [MybatisPlus](ProjectMD/MybatisPlus.md)

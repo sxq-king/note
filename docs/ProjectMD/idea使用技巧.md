@@ -1,8 +1,8 @@
 
 
-# idea使用技巧
+# idea使用技巧(2022.2)
 
-1. 设置自定义注释模板(创建类时自动加上)
+## 1.  设置自定义注释模板(创建类时自动加上)
 
 > file --> setting --> Editor --> File and Code Templates --> 找到想加注释模板的文件类型 
 
@@ -22,4 +22,11 @@ public class ${NAME} {
 }
 ```
 
-2. 
+## 2. Debug技巧，step into 和 force step info
+
+- step into 是进入自己写的代码的里面，比如调用xxx方法。servcie.xxx。step into就可以正常进入到xxx方法。单如果调用的方法是原生的，这时step into 就和step over（跳转到下一行）一样。
+- force step into 相当于强化版的step into 当你调用某个原生的方法时，使用force step into 可以进入源码中。download之后慢慢看。
+
+## 3. 设置idea通过滚轮缩放放大code
+
+> file-->settings-->Editor-->General-->Mouse Control--> change font size  with Ctrl +Mouse Wheel in:

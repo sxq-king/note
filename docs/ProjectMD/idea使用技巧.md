@@ -30,3 +30,28 @@ public class ${NAME} {
 ## 3. 设置idea通过滚轮缩放放大code
 
 > file-->settings-->Editor-->General-->Mouse Control--> change font size  with Ctrl +Mouse Wheel in:
+
+## 4. idea设置打开时选则项目
+
+> File-->Settings-->Appearance&Behavior-->System Settings-->
+
+> 在Project中有一个Repen projects on startup选项。
+
+> 取消勾选即可.
+
+
+
+## 5. 切换项目时询问
+
+> File-->Settings-->Appearance&Behavior-->System Settings-->
+
+> 勾选 Comfirm before exiting the IDE
+
+> Open project in new window 打开新窗口
+>
+> Open project in the same window 打开在当前窗口
+
+
+
+
+

@@ -55,3 +55,13 @@ public class ${NAME} {
 
 
 
+## 6.自定义快捷键模板
+
+- File-->Settings-->Editor-->Live Templates -->
+- 点击+号，新建一个我们自定义的快捷键组--> 选中我们创建的组，再点击加号创建快捷键模板
+- Abbreviation:快捷键
+- Template text:快捷键模板
+- Description: 快捷键描述
+- 编辑完后Define 选择快捷键模板对应的语言
+- apply
+

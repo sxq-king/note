@@ -39,8 +39,6 @@ public class ${NAME} {
 
 > 取消勾选即可.
 
-
-
 ## 5. 切换项目时询问
 
 > File-->Settings-->Appearance&Behavior-->System Settings-->
@@ -51,17 +49,71 @@ public class ${NAME} {
 >
 > Open project in the same window 打开在当前窗口
 
-
-
-
-
 ## 6.自定义快捷键模板
 
 - File-->Settings-->Editor-->Live Templates -->
+
 - 点击+号，新建一个我们自定义的快捷键组--> 选中我们创建的组，再点击加号创建快捷键模板
+
 - Abbreviation:快捷键
+
 - Template text:快捷键模板
+
 - Description: 快捷键描述
+
 - 编辑完后Define 选择快捷键模板对应的语言
-- apply
+
+- apply完成
+
+- 例1快速try-catch-finally
+
+  ```java
+  try {
+  
+  }catch (Exception e){
+      e.printStackTrace();
+  }finally {
+  
+  }
+  ```
+
+- 例2 计算耗时
+
+  ```java
+  long startTime = System.currentTimeMillis();
+  long endTime = System.currentTimeMillis();
+  System.out.println("------costTime:" + (endTime - startTime) + "毫秒");
+  ```
+
+- 例3 使用lambda表达式形式创建新线程
+
+  ```java
+    new Thread(() -> {
+
+    }, "t1").start();
+  ```
+
+- 例4 暂停几秒
+
+    ```java
+    try{TimeUnit.SECONDS.sleep($end$);}catch (InterruptedException e){e.printStackTrace();}
+    ```
+
+## 7.大小写切换
+
+```java
+ctrl+shift+u
+```
+
+## 8.全局搜索 and 局部搜索
+
+> ctrl + shift + f 全局
+>
+> ctrl + f 局部
+
+9.全局替换 and 局部替换
+
+> ctrl + shift + r 全局
+>
+> ctrl + r 局部
 

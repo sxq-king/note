@@ -135,7 +135,7 @@ docker exec -it 容器ID
  
  docker attach 容器ID /bin/bash
  ：这个不会创建新进程，退出后容器也会销毁，不常用。
- ```
+```
  从容器拷贝文件到主机上
  ```
  容器---> 主机
@@ -150,4 +150,54 @@ docker exec -it 容器ID
  
  cat 文件名.tar | docker import - 镜像用户/镜像名：镜像版本号
  
+
+
+ ```
+
+## 安装相关
+
+### redis
+
+```java
+docker run -p 6379:6379 \
+    --name my_redis \
+    --privileged=true \
+    -v /app/redis/redis.conf:/etc/redis/redis.conf \
+    -v /app/redis/data:/data \
+    -d redis redis-server /etc/redis/redis.conf
+
+docker run --name my_redis \
+    -p 6379:6379 \
+    -v /app/redis/data:/data \
+    -v /app/redis/redis.conf:/etc/redis/redis.conf \
+    -d redis redis-server /etc/redis/redis.conf
+
+```
+
+### mysql
+
+```java
+docker run -d -p 3306:3306 \
+    --privileged=true \
+    -v /app/mysql/log:/var/log/mysql \
+    -v /app/mysql/data:/var/lib/mysql \
+    -v /app/mysql/conf:/etc/mysql/conf.d \
+    -e MYSQL_ROOT_PASSWORD=密码 \
+    --name mysql mysql:5.7
+```
+
+### minio
+
+```java
+docker run --name minio \
+-p 9000:9000 \  
+-p 9090:9090 \
+-d --restart=always \
+-e "MINIO_ROOT_USER=admin" \
+-e "MINIO_ROOT_PASSWORD=996957240.sxq" \
+-v /app/minio/data:/data \
+-v /app/minio/config:/root/.minio \
+minio/minio server /data \
+--console-address '0.0.0.0:9090'
+```
 

@@ -402,7 +402,6 @@ class Share{
             while (number != 1){
                 condition.await();
             }
-            
             number--;
             System.out.println(Thread.currentThread().getName() + " :: " + number);
 

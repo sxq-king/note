@@ -16,4 +16,4 @@ git add . #当前目录下所有文件添加暂存区
 
 git commit -m "提交信息" # 提交暂存区到本地库
 
-git push #推送 # 推送远程库
+git push #推送远程库

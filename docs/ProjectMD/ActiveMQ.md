@@ -61,6 +61,8 @@ JMS 全称：Java Message Service ，即为 Java 消息服务，是一套 java �
 docker pull webcenter/activemq   #拉取镜像
 
 docker run -d -p 8161:8161 -p 61616:61616 webcenter/activemq      #启动并映射端口
+
+docker run --name='activemq' -itd -p 8161:8161 -p 61616:61616 -p 61618:61618 -e ACTIVEMQ_ADMIN_LOGIN=admin -e ACTIVEMQ_ADMIN_PASSWORD=admin  --restart=always  -v /app/activemq/data:/data/activemq -v /app/activemq/log:/var/log/activemq  webcenter/activemq:latest    #启动并设置账号密码并映射文件到宿主机
 ```
 
 ## 2.2 访问ActiveMQ控制台
@@ -702,11 +704,11 @@ public class Jms_TX_Consumer {
 
  
 
-**二、**事务和签收的关系
+**二、**事务和签收的关系总结
 
 ①　在事务性会话中，当一个事务被成功提交则消息被自动签收。如果事务回滚，则消息会被再次传送。事务优先于签收，开始事务后，签收机制不再起任何作用。
 
-②　非事务性会话中，消息何时被确认取决于创建会话时的应答模式。
+②　非事务性会话中，消息何时被确认取决于创建会话时的应答模式(自动签收无所谓，手动签收必须调acknowledge()方法)。
 
 ③　生产者事务开启，只有commit后才能将全部消息变为已消费。
 
@@ -755,3 +757,961 @@ JMS Pub/Sub 模型定义了如何向一个内容节点发布和订阅消息，�
 (4) 非持久和持久化订阅如何选择
 
 当所有的消息必须被接收，则用持久化订阅。当消息丢失能够被容忍，则用非持久订阅。
+
+
+
+#  4.ActiveMQ的broker
+
+## 4.1 broker是什么？
+
+相当于一个ActiveMQ服务器实例。说白了，Broker其实就是实现了用代码的形式启动ActiveMQ将MQ嵌入到Java代码中，以便随时用随时启动，在用的时候再去启动这样能节省了资源，也保证了可用性。这种方式，我们实际开发中很少采用，因为他缺少太多了东西，如：日志，数据存储等等。
+
+
+
+## 4.2 java中启动一个borker
+
+添加依赖
+
+```java
+<dependency>
+    <groupId>com.fasterxml.jackson.core</groupId>
+    <artifactId>jackson-databind</artifactId>
+    <version>2.10.1</version>
+</dependency>
+```
+
+创建broker启动类
+
+```java
+import org.apache.activemq.broker.BrokerService;
+
+/**
+ * @author song
+ * @version 1.0
+ * @date 2023/9/8 11:22
+ * @description: 嵌入式broker的启动类
+ */
+
+public class EmbedBroker {
+    public static void main(String[] args) throws Exception {
+        //ActiveMQ也支持在vm中通信基于嵌入的broker
+        BrokerService brokerService = new BrokerService();
+        brokerService.setUseJmx(true);
+        brokerService.addConnector("tcp://localhost:61616");
+        brokerService.start();
+    }
+}
+
+```
+
+# 5.Spring整合ActiveMQ
+
+大佬的理解：我们之前介绍的内容也很重要，他更灵活，他支持各种自定义功能，可以满足我们工作中复杂的需求。很多activemq的功能，我们要看官方文档或者博客，这些功能大多是在上面代码的基础上修改完善的。如果非要把这些功能强行整合到spring，就有些缘木求鱼了。我认为另一种方式整合spring更好，就是将上面的类注入到Spring中，其他不变。这样既能保持原生的代码，又能集成到spring。
+
+下面我们将的Spring和SpringBoot整合ActiveMQ也重要，他给我们提供了一个模板，简化了代码，减少我们工作中遇到坑，能够满足开发中90%以上的功能。
+
+## 5.1 添加依赖
+
+```xml
+<dependencies>
+   <!-- activemq核心依赖包  必须-->
+    <dependency>
+        <groupId>org.apache.activemq</groupId>
+        <artifactId>activemq-all</artifactId>
+        <version>5.10.0</version>
+    </dependency>
+    <!--  嵌入式activemq的broker所需要的依赖包   -->
+    <dependency>
+        <groupId>com.fasterxml.jackson.core</groupId>
+        <artifactId>jackson-databind</artifactId>
+        <version>2.10.1</version>
+    </dependency>
+    <!-- activemq连接池  必须-->
+    <dependency>
+        <groupId>org.apache.activemq</groupId>
+        <artifactId>activemq-pool</artifactId>
+        <version>5.15.10</version>
+    </dependency>
+    <!-- spring支持jms的包 必须-->
+    <dependency>
+        <groupId>org.springframework</groupId>
+        <artifactId>spring-jms</artifactId>
+        <version>5.2.1.RELEASE</version>
+    </dependency>
+    <!--spring相关依赖包-->
+    <dependency>
+        <groupId>org.apache.xbean</groupId>
+        <artifactId>xbean-spring</artifactId>
+        <version>4.15</version>
+    </dependency>
+    <dependency>
+        <groupId>org.springframework</groupId>
+        <artifactId>spring-aop</artifactId>
+        <version>5.2.1.RELEASE</version>
+    </dependency>
+    <!-- Spring核心依赖 -->
+    <dependency>
+        <groupId>org.springframework</groupId>
+        <artifactId>spring-core</artifactId>
+        <version>4.3.23.RELEASE</version>
+    </dependency>
+    <dependency>
+        <groupId>org.springframework</groupId>
+        <artifactId>spring-context</artifactId>
+        <version>4.3.23.RELEASE</version>
+    </dependency>
+    <dependency>
+        <groupId>org.springframework</groupId>
+        <artifactId>spring-aop</artifactId>
+        <version>4.3.23.RELEASE</version>
+    </dependency>
+    <dependency>
+        <groupId>org.springframework</groupId>
+        <artifactId>spring-orm</artifactId>
+        <version>4.3.23.RELEASE</version>
+    </dependency>
+</dependencies>
+```
+
+
+
+## 5.2 编写spring-activemq.xml
+
+在src/main/resources/spring-activemq.xml
+
+```xml
+<?xml version="1.0" encoding="UTF-8"?>
+<beans xmlns="http://www.springframework.org/schema/beans"
+       xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+       xmlns:context="http://www.springframework.org/schema/context"
+       xsi:schemaLocation="http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans.xsd http://www.springframework.org/schema/context https://www.springframework.org/schema/context/spring-context.xsd">
+
+    <!--  开启包的自动扫描  -->
+    <context:component-scan base-package="com.activemq.demo"/>
+    <!--  配置生产者  -->
+    <bean id="connectionFactory" class="org.apache.activemq.pool.PooledConnectionFactory" destroy-method="stop">
+        <property name="connectionFactory">
+            <!--      正真可以生产Connection的ConnectionFactory,由对应的JMS服务商提供      -->
+            <bean class="org.apache.activemq.spring.ActiveMQConnectionFactory">
+                <property name="brokerURL" value="tcp://192.168.10.130:61616"/>
+            </bean>
+        </property>
+        <property name="maxConnections" value="100"/>
+    </bean>
+
+    <!--  这个是队列目的地,点对点的Queue  -->
+    <bean id="destinationQueue" class="org.apache.activemq.command.ActiveMQQueue">
+        <!--    通过构造注入Queue名    -->
+        <constructor-arg index="0" value="spring-active-queue"/>
+    </bean>
+
+    <!--  这个是队列目的地,  发布订阅的主题Topic-->
+    <bean id="destinationTopic" class="org.apache.activemq.command.ActiveMQTopic">
+        <constructor-arg index="0" value="spring-active-topic"/>
+    </bean>
+
+    <!--  Spring提供的JMS工具类,他可以进行消息发送,接收等  -->
+    <bean id="jmsTemplate" class="org.springframework.jms.core.JmsTemplate">
+        <!--    传入连接工厂    -->
+        <property name="connectionFactory" ref="connectionFactory"/>
+        <!--    传入目的地    -->
+        <property name="defaultDestination" ref="destinationQueue"/>
+        <!--    消息自动转换器    -->
+        <property name="messageConverter">
+            <bean class="org.springframework.jms.support.converter.SimpleMessageConverter"/>
+        </property>
+    </bean>
+</beans>
+```
+
+## 5.3 编写代码
+
+### 5.3.1 Queue生产者
+
+```java
+
+import org.apache.xbean.spring.context.ClassPathXmlApplicationContext;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.ApplicationContext;
+import org.springframework.jms.core.JmsTemplate;
+import org.springframework.stereotype.Service;
+ 
+@Service
+public class SpringMQ_Producer {
+ 
+ 
+    private JmsTemplate jmsTemplate;
+ 
+    @Autowired
+    public void setJmsTemplate(JmsTemplate jmsTemplate) {
+        this.jmsTemplate = jmsTemplate;
+    }
+ 
+    public static void main(String[] args) {
+        ApplicationContext applicationContext = new ClassPathXmlApplicationContext("Application.xml");
+        SpringMQ_Producer springMQ_producer = applicationContext.getBean(SpringMQ_Producer.class);
+ 
+        springMQ_producer.jmsTemplate.send(session -> session.createTextMessage("***Spring和ActiveMQ的整合case111....."));
+        System.out.println("********send task over");
+    }
+}
+
+```
+
+
+### 5.3.2 Queue消费者
+
+```java
+
+import org.apache.xbean.spring.context.ClassPathXmlApplicationContext;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.ApplicationContext;
+import org.springframework.jms.core.JmsTemplate;
+import org.springframework.stereotype.Service;
+ 
+@Service
+public class SpringMQ_Consumer {
+ 
+ 
+    private JmsTemplate jmsTemplate;
+ 
+    @Autowired
+    public void setJmsTemplate(JmsTemplate jmsTemplate) {
+        this.jmsTemplate = jmsTemplate;
+    }
+ 
+    public static void main(String[] args) {
+        ApplicationContext applicationContext = new ClassPathXmlApplicationContext("Application.xml");
+        SpringMQ_Consumer springMQ_consumer = applicationContext.getBean(SpringMQ_Consumer.class);
+        String returnValue = (String) springMQ_consumer.jmsTemplate.receiveAndConvert();
+        System.out.println("****消费者收到的消息:   " + returnValue);
+    }
+}
+```
+
+### 5.3.3 Topic生产者
+
+```java
+import org.apache.xbean.spring.context.ClassPathXmlApplicationContext;
+import org.springframework.context.ApplicationContext;
+import org.springframework.jms.core.JmsTemplate;
+import org.springframework.stereotype.Service;
+ 
+import javax.jms.Destination;
+ 
+@Service
+public class SpringMQ_Topic_Producer {
+    private JmsTemplate jmsTemplate;
+ 
+    public SpringMQ_Topic_Producer(JmsTemplate jmsTemplate) {
+        this.jmsTemplate = jmsTemplate;
+    }
+ 
+    public static void main(String[] args) {
+        ApplicationContext applicationContext = new ClassPathXmlApplicationContext("Application.xml");
+        SpringMQ_Topic_Producer springMQ_topic_producer = applicationContext.getBean(SpringMQ_Topic_Producer.class);
+        //直接调用application.xml里面创建的destinationTopic这个bean设置为目的地就行了
+        springMQ_topic_producer.jmsTemplate.setDefaultDestination(((Destination) applicationContext.getBean("destinationTopic")));
+        springMQ_topic_producer.jmsTemplate.send(session -> session.createTextMessage("***Spring和ActiveMQ的整合TopicCase111....."));
+    }
+}
+```
+
+### 5.3.4 Topic消费者
+
+```java
+import org.apache.xbean.spring.context.ClassPathXmlApplicationContext;
+import org.springframework.context.ApplicationContext;
+import org.springframework.jms.core.JmsTemplate;
+import org.springframework.stereotype.Service;
+ 
+import javax.jms.Destination;
+ 
+@Service
+public class SpringMQ_Topic_Consumer {
+    private JmsTemplate jmsTemplate;
+ 
+    public SpringMQ_Topic_Consumer(JmsTemplate jmsTemplate) {
+        this.jmsTemplate = jmsTemplate;
+    }
+ 
+    public static void main(String[] args) {
+        ApplicationContext applicationContext = new ClassPathXmlApplicationContext("Application.xml");
+        SpringMQ_Topic_Consumer springMQConsumer = applicationContext.getBean(SpringMQ_Topic_Consumer.class);
+        //直接调用application.xml里面创建的destinationTopic这个bean设置为目的地就行了
+        springMQConsumer.jmsTemplate.setDefaultDestination(((Destination) applicationContext.getBean("destinationTopic")));
+        String returnValue = (String) springMQConsumer.jmsTemplate.receiveAndConvert();
+        System.out.println("****消费者收到的消息:   " + returnValue);
+    }
+}
+```
+
+### 5.3.5 Spring中配置自启动消费者
+
+在spring-activemq.xml中新增
+
+```xml
+ <!--  配置Jms消息监听器  -->
+    <bean id="defaultMessageListenerContainer" class="org.springframework.jms.listener.DefaultMessageListenerContainer">
+        <!--  Jms连接的工厂     -->
+        <property name="connectionFactory" ref="connectionFactory"/>
+        <!--   设置默认的监听目的地     -->
+        <property name="destination" ref="destinationTopic"/>
+        <!--  指定自己实现了MessageListener的类     -->
+        <property name="messageListener" ref="myMessageListener"/>
+    </bean>
+
+```
+
+新增监听类
+
+```java
+
+import org.springframework.stereotype.Component;
+import javax.jms.JMSException;
+import javax.jms.Message;
+import javax.jms.MessageListener;
+import javax.jms.TextMessage;
+
+/**
+ * 实现MessageListener的类,需要把这个类交给xml配置里面的DefaultMessageListenerContainer管理
+ */
+@Component
+public class MyMessageListener implements MessageListener {
+
+    @Override
+    public void onMessage(Message message) {
+        if (message instanceof TextMessage) {
+            TextMessage textMessage = (TextMessage) message;
+            try {
+                System.out.println("消费者收到的消息" + textMessage.getText());
+            } catch (JMSException e) {
+                e.printStackTrace();
+            }
+        }
+    }
+}
+
+```
+
+消费者配置了自动监听，就相当于在spring里面后台运行，有消息就运行我们实现监听类里面的方法。
+
+# 6.SpringBoot整合ActiveMQ
+
+## 6.1 新建项目
+
+boot_mq_produce: 生产者
+
+boot_mq_consumer:消费者
+
+## 6.2 引入依赖
+
+两个工程中都要引入
+
+```xml
+ <!-- https://mvnrepository.com/artifact/org.springframework.boot/spring-boot-starter -->
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter</artifactId>
+            <version>2.2.1.RELEASE</version>
+        </dependency>
+
+        <!-- https://mvnrepository.com/artifact/org.springframework.boot/spring-boot-starter -->
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-activemq</artifactId>
+            <version>2.2.1.RELEASE</version>
+        </dependency>
+
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-web</artifactId>
+            <version>2.2.1.RELEASE</version>
+        </dependency>
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-test</artifactId>
+            <version>2.2.1.RELEASE</version>
+        </dependency>
+```
+
+
+
+## 6.3 创建Queue生产者工程
+### 6.3.1 编写yml文件
+
+```yaml
+#Springboot启动端口
+server:
+  port: 8080
+
+#ActiveMQ配置
+spring:
+  activemq:
+    broker-url: tcp://192.168.10.130:61616 #ActiveMQ服务器IP
+    user: admin #ActiveMQ连接用户名
+    password: 123456 #ActiveMQ连接密码
+  jms:
+    #指定连接队列还是主题
+    pub-sub-domain: false # false = Queue |  true = Topic
+
+#定义服务上的队列名
+myQueueName: springboot-activemq-queue
+```
+
+### 6.3.2 编写配置目的地的bean
+
+```java
+import org.apache.activemq.command.ActiveMQQueue;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.context.annotation.Bean;
+import org.springframework.jms.annotation.EnableJms;
+import org.springframework.stereotype.Component;
+
+import javax.jms.Queue;
+
+/**
+ * @author song
+ * @version 1.0
+ * @date 2023/9/8 14:26
+ * @description: 配置目的地的bean和开启springboot的jms功能
+ */
+
+// 让spring管理的注解，相当于spring中在xml 中写了个bean
+@Component
+@EnableJms  //开启JMS
+public class ConfigBean {
+    // 注入配置文件中的 myqueue
+    @Value("${myQueueName}")
+    private String myQueue ;
+
+    @Bean   // bean id=""  class="…"
+    public Queue queue(){
+        return new ActiveMQQueue(myQueue);
+    }
+}
+```
+
+### 6.3.3 创建消息的Service
+
+```java
+/**
+ * @author song
+ * @version 1.0
+ * @date 2023/9/8 14:30
+ * @description: 生产消息
+ */
+@Component
+public class Queue_Produce {
+
+    @Autowired
+    private JmsMessagingTemplate jmsMessagingTemplate;
+    @Autowired
+    private Queue queue;
+
+    public void produceMsg() {
+        jmsMessagingTemplate.convertAndSend(queue,"*******"+UUID.randomUUID().toString().substring(0,6));
+    }
+    
+      // 定时任务。每3秒执行一次。非必须代码，仅为演示。 需要在主启动类添加@EnableScheduling开启定时任务
+    @Scheduled(fixedDelay = 3000)
+    public void produceMessageScheduled(){
+        produceMsg();
+        System.out.println("============produceMessageScheduled() send ok");
+    }
+}
+```
+
+## 6.4 创建Queue消费者工程
+
+### 6.4.1 编写工程YML文件
+
+```xml
+#Springboot启动端口
+server:
+  port: 8888
+
+#ActiveMQ配置
+spring:
+  activemq:
+    broker-url: tcp://192.168.10.130:61616 #ActiveMQ服务器IP
+    user: admin #ActiveMQ连接用户名
+    password: 123456 #ActiveMQ连接密码
+  jms:
+    #指定连接队列还是主题
+    pub-sub-domain: false # false = Queue |  true = Topic
+
+#定义服务上的队列名
+myQueueName: springboot-activemq-queue
+```
+
+### 6.4.2 注册消费者监听器
+
+```java
+import org.springframework.jms.annotation.JmsListener;
+import org.springframework.stereotype.Component;
+
+import javax.jms.TextMessage;
+
+/**
+ * @author song
+ * @version 1.0
+ * @date 2023/9/8 15:08
+ * @description: 消息监听
+ */
+@Component
+public class Queue_Consumer {
+
+    // 注册一个监听器。destination指定监听的主题。
+    @JmsListener(destination = "${myQueueName}")
+    public void receive(TextMessage textMessage) throws  Exception{
+        System.out.println(" ***  消费者收到消息  ***"+textMessage.getText());
+    }
+}
+
+```
+
+## 6.5 创建Topic生产者工程
+
+### 6.5.1 编写yml文件
+
+```xml
+#Springboot启动端口
+server:
+  port: 7777
+
+#ActiveMQ配置
+spring:
+  activemq:
+    broker-url: tcp://121.37.0.16:61616 #ActiveMQ服务器IP
+    user: admin #ActiveMQ连接用户名
+    password: 123456 #ActiveMQ连接密码
+  jms:
+    #指定连接队列还是主题
+    pub-sub-domain: true # false = Queue |  true = Topic
+
+#定义服务上的队列名
+myTopicName: springboot-activemq-topic
+```
+
+### 6.5.2 编写配置目的地的bean
+
+```java
+import org.apache.activemq.command.ActiveMQQueue;
+import org.apache.activemq.command.ActiveMQTopic;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.context.annotation.Bean;
+import org.springframework.jms.annotation.EnableJms;
+import org.springframework.stereotype.Component;
+
+import javax.jms.Queue;
+import javax.jms.Topic;
+
+/**
+ * @author song
+ * @version 1.0
+ * @date 2023/9/8 14:26
+ * @description: 配置目的地的bean和开启springboot的jms功能
+ */
+
+// 让spring管理的注解，相当于spring中在xml 中写了个bean
+@Component
+@EnableJms
+public class ConfigBean {
+    // 注入配置文件中的 myqueue
+    @Value("${myTopicName}")
+    private String myTopic ;
+
+    @Bean   // bean id=""  class="…"
+    public Topic topic(){
+        return new ActiveMQTopic(myTopic);
+    }
+}
+
+```
+
+### 6.5.3 创建消息的Service
+
+```java
+import javax.jms.Topic;
+import java.util.UUID;
+
+/**
+ * @author song
+ * @version 1.0
+ * @date 2023/9/8 15:28
+ * @description: TODO
+ */
+@Component
+public class TopicProduce {
+
+    @Autowired
+    private JmsMessagingTemplate jmsMessagingTemplate;
+
+    @Autowired
+    private Topic topic;
+
+    @Scheduled(fixedDelay = 3000)
+    public void topicSend(){
+        jmsMessagingTemplate.convertAndSend(topic,"*******"+ UUID.randomUUID().toString().substring(0,6));
+    }
+}
+```
+
+## 6.6 创建Topic消费者工程
+
+### 6.6.1 编写yml文件
+
+```xml
+#Springboot启动端口
+server:
+  port: 8888
+
+#ActiveMQ配置
+spring:
+  activemq:
+    broker-url: tcp://121.37.0.16:61616 #ActiveMQ服务器IP
+    user: admin #ActiveMQ连接用户名
+    password: 123456 #ActiveMQ连接密码
+  jms:
+    #指定连接队列还是主题
+    pub-sub-domain: true # false = Queue |  true = Topic
+
+#定义服务上的队列名
+myTopicName: springboot-activemq-topic
+```
+
+### 6.6.2 注册消费监听器
+
+```java
+import org.springframework.jms.annotation.JmsListener;
+import org.springframework.stereotype.Component;
+import javax.jms.TextMessage;
+
+@Component
+public class Topic_Consummer {
+
+    @JmsListener(destination = "${myTopicName}")
+    public void receive(TextMessage textMessage) throws  Exception{
+        System.out.println("消费者01受到订阅的主题："+textMessage.getText());
+    }
+}
+```
+
+# 7.ActiveMQ的传输协议
+
+## 7.1 ActiveMQ协议简介
+
+ActiveMQ支持的client-broker通讯协议有：TVP、NIO、UDP、SSL、Http(s)、VM。
+
+其中配置Transport Connector的文件在ActiveMQ安装目录的conf/activemq.xml中的<transportConnectors>标签之内。
+
+activemq传输协议的官方文档：http://activemq.apache.org/configuring-version-5-transports.html
+
+查看使用的协议 ：%activeMQ安装目录%/conf/activemq.xml
+
+```xml
+<transportConnectors>
+    <<!--tcp-->
+    <transportConnector name="openwire" uri="tcp://0.0.0.0:61616?maximumConnections=1000&amp;wireFormat.maxFrameSize=104857600"/>
+
+    <transportConnector name="amqp" uri="amqp://0.0.0.0:5672?maximumConnections=1000&amp;wireFormat.maxFrameSize=104857600"/>
+
+    <transportConnector name="stomp" uri="stomp://0.0.0.0:61613?maximumConnections=1000&amp;wireFormat.maxFrameSize=104857600"/>
+
+          <transportConnector name="mqtt" uri="mqtt://0.0.0.0:1884?maximumConnections=1000&amp;wireFormat.maxFrameSize=104857600"/>
+
+          <transportConnector name="ws" uri="ws://0.0.0.0:61614?maximumConnections=1000&amp;wireFormat.maxFrameSize=104857600"/>
+    
+</transportConnectors>
+```
+
+在上文给出的配置信息中，URI描述信息的头部都是采用协议名称：例如
+
+描述amqp协议的监听端口时，采用的URI描述格式为“amqp://······”；
+
+描述Stomp协议的监听端口时，采用URI描述格式为“stomp://······”；
+
+唯独在进行openwire协议描述时，URI头却采用的“tcp://······”。这是因为ActiveMQ中默认的消息协议就是openwire
+
+## 7.2 支持的协议
+
+除了tcp和nio协议，其他的了解就行。各种协议有各自擅长该协议的中间件，工作中一般不会使用activemq去实现这些协议。如： mqtt是物联网专用协议，采用的中间件一般是mosquito。ws是websocket的协议，是和前端对接常用的，一般在java代码中内嵌一个基站（中间件）。stomp好像是邮箱使用的协议的，各大邮箱公司都有基站（中间件）。
+
+注意：协议不同，我们的代码都会不同。
+
+
+
+ActiveMQ支持的网络协议
+
+| 协议    | 描述                                                         |
+| ------- | ------------------------------------------------------------ |
+| TCP     | 默认的协议，性能相对可以                                     |
+| NIO     | 基于TCP协议之上的，进行了扩展和优化，具有更的扩展性          |
+| UDP     | 性能比TCP更好，但是不具有可靠性                              |
+| SSL     | 安全链接                                                     |
+| HTTP(S) | 基于HTTP或者HTTPS                                            |
+| VM      | VM本身不是协议，当客户端和代理在同一个Java虚拟机（VM）中运行时，他们之间需要通信，但不想占用网络通道，而是直接通信，可以使用该方式。 |
+
+### 7.2.1 TCP协议
+
+(1) Transmission Control Protocol(TCP)是默认的。TCP的Client监听端口61616
+
+(2) 在网络传输数据前，必须要先序列化数据，消息是通过一个叫wire protocol的来序列化成字节流。
+
+(3) TCP连接的URI形式如：tcp://HostName:port?key=value&key=value，后面的参数是可选的。
+
+(4) TCP传输的的优点：
+
+TCP协议传输可靠性高，稳定性强
+
+高效率：字节流方式传递，效率很高
+
+有效性、可用性：应用广泛，支持任何平台
+
+(5) 关于Transport协议的可选配置参数可以参考官网http://activemq.apache.org/tcp-transport-reference
+
+```xml
+ <transportConnector name="openwire" uri="tcp://0.0.0.0:61616?maximumConnections=1000&amp;wireFormat.maxFrameSize=104857600"/>
+```
+
+
+
+### 7.2.2 NIO协议
+
+(1) New I/O API Protocol(NIO)
+
+(2) NIO协议和TCP协议类似，但NIO更侧重于底层的访问操作。它允许开发人员对同一资源可有更多的client调用和服务器端有更多的负载。
+
+(3) 适合使用NIO协议的场景：
+
+可能有大量的Client去连接到Broker上，一般情况下，大量的Client去连接Broker是被操作系统的线程所限制的。因此，NIO的实现比TCP需要更少的线程去运行，所以建议使用NIO协议。
+
+可能对于Broker有一个很迟钝的网络传输，NIO比TCP提供更好的性能。
+
+(4) NIO连接的URI形式：nio://hostname:port?key=value&key=value
+
+(5) 关于Transport协议的可选配置参数可以参考官网http://activemq.apache.org/configuring-version-5-transports.html
+
+```xml
+<transportCornector name="nio" uri="nio://localhost:61618?trace=true"/>
+```
+
+### 7.2.3 AMQP协议
+
+### 7.2.4 STOMP协议
+
+### 7.2.5 MQTT协议
+
+### 7.2.6 WS协议
+
+## 7.3 NIO协议案例
+
+ActiveMQ这些协议传输的底层默认都是使用BIO网络的IO模型。只有当我们指定使用nio才使用NIO的IO模型。
+
+### 7.3.1 修改activemq.xml
+
+①　修改配置文件activemq.xml在 <transportConnectors>节点下添加如下内容：
+
+```xml
+<transportConnector name="nio" uri="nio://0.0.0.0:61618?trace=true" />
+```
+
+②　修改完成后重启activemq:  
+
+```dockerfile
+docker restart activemq
+```
+
+③　查看管理后台，可以看到页面多了nio
+
+### 7.3.2 测试nio协议
+
+生产者
+
+```java
+
+import org.apache.activemq.ActiveMQConnectionFactory;
+
+import javax.jms.*;
+
+/**
+ * @author song
+ * @version 1.0
+ * @date 2023/9/8 16:46
+ * @description: TODO
+ */
+
+public class JMSProduceNIO {
+    private static final String ACTIVEMQ_URL = "nio://121.37.0.16:61618";
+    private static final String QUEUE_NAME = "Queue-NIO";
+
+    public static void main(String[] args) throws JMSException {
+        ActiveMQConnectionFactory connectionFactory = new ActiveMQConnectionFactory();
+        connectionFactory.setBrokerURL(ACTIVEMQ_URL);
+        Connection connection = connectionFactory.createConnection();
+        Session session = connection.createSession(true, Session.AUTO_ACKNOWLEDGE);
+        Queue queue = session.createQueue(QUEUE_NAME);
+        MessageProducer messageProducer = session.createProducer(queue);
+        connection.start();
+        for (int i = 0; i < 3; i++) {
+            TextMessage textMessage = session.createTextMessage("测试Nio" + i);
+            messageProducer.send(textMessage);
+        }
+        session.commit();
+        System.out.println("消息发送完成");
+        messageProducer.close();
+        session.close();
+        connection.close();
+    }
+
+}
+```
+
+消费者
+
+```java
+import org.apache.activemq.ActiveMQConnectionFactory;
+
+import javax.jms.*;
+import java.io.IOException;
+
+/**
+ * @author song
+ * @version 1.0
+ * @date 2023/9/8 16:46
+ * @description: TODO
+ */
+
+public class JMSConsumerNIO {
+    private static final String ACTIVEMQ_URL = "nio://121.37.0.16:61618";
+    private static final String QUEUE_NAME = "Queue-NIO";
+
+    public static void main(String[] args) throws JMSException, IOException {
+        ActiveMQConnectionFactory activeMQConnectionFactory = new ActiveMQConnectionFactory();
+        activeMQConnectionFactory.setBrokerURL(ACTIVEMQ_URL);
+        Connection connection = activeMQConnectionFactory.createConnection();
+        connection.start();
+        Session session = connection.createSession(true, Session.AUTO_ACKNOWLEDGE);
+        Queue queue = session.createQueue(QUEUE_NAME);
+        MessageConsumer messageConsumer = session.createConsumer(queue);
+        messageConsumer.setMessageListener(message -> {
+            TextMessage textMessage = (TextMessage) message;
+            try {
+                System.out.println("消费者接收到的消息:  " + textMessage.getText());
+                session.commit();
+            } catch (JMSException e) {
+                e.printStackTrace();
+            }
+        });
+        System.in.read();
+    }
+
+}
+```
+
+## 7.4 NIO案例增强
+
+上诉NIO性能不错了，如何进一步优化？
+
+上面是Openwire协议传输底层使用NIO网络IO模型。 如何让其他协议传输底层也使用NIO网络IO模型呢？
+
+URI格式以"nio"开头，代表这个端口使用TCP协议为基础的NIO网络模型。
+但是这样的设置方式，只能使这个端口支持Openwire协议。
+
+解决：使用auto关键字，使用"+"符号来为端口设置多种特性
+
+
+
+原来的
+
+```xml
+<transportConnector name="auto+nio" uri="auto+nio://localhost:5671"/>
+```
+
+增强后
+
+```xml
+<transportConnector name="auto+nio" uri="auto+nio://0.0.0.0:61608?maximumConnections=1000&amp;wireFormat.maxFrameSize=104857600&amp;org.apache.activemq.transport.nio.SelectorManager.corePoolSize=20&amp;org.apache.activemq.transport.nio.Se1ectorManager.maximumPoo1Size=50"/>
+```
+
+auto	: 针对所有的协议，他会识别我们是什么协议。
+
+nio		：使用NIO网络IO模型
+
+修改配置文件后重启activemq。
+
+
+
+使用nio模型的tcp协议生产者。
+
+```java
+public class Jms_TX_Producer {
+    private static final String ACTIVEMQ_URL = "tcp://118.24.20.3:61608";
+    private static final String ACTIVEMQ_QUEUE_NAME = "auto-nio";
+
+    public static void main(String[] args) throws JMSException {
+         ......
+    }
+}
+```
+
+使用nio模型的tcp协议消费者。
+
+```java
+public class Jms_TX_Consumer {
+    private static final String ACTIVEMQ_URL = "tcp://118.24.20.3:61608";
+    private static final String ACTIVEMQ_QUEUE_NAME = "auto-nio";
+
+    public static void main(String[] args) throws JMSException, IOException {
+       ......
+    }
+}
+```
+
+使用nio模型的nio协议生产者。
+
+```java
+public class Jms_TX_Producer {
+    private static final String ACTIVEMQ_URL = "nio://118.24.20.3:61608";
+    private static final String ACTIVEMQ_QUEUE_NAME = "auto-nio";
+
+    public static void main(String[] args) throws JMSException {
+       ......
+    }
+}
+```
+
+使用nio模型的nio协议消费者。
+
+```java
+public class Jms_TX_Consumer {
+    private static final String ACTIVEMQ_URL = "nio://118.24.20.3:61608";
+    private static final String ACTIVEMQ_QUEUE_NAME = "auto-nio";
+
+    public static void main(String[] args) throws JMSException, IOException {
+        ......
+    }
+}
+```
+
+# 8.ActiveMQ消息存储和持久化
+
+## 8.1 持久化是什么？
+
+为了避免意外宕机以后丢失信息，需要做到重启后可以恢复消息队列，消息系统一半都会采用持久化机制。
+ActiveMQ的消息持久化机制有JDBC，AMQ，KahaDB和LevelDB，无论使用哪种持久化方式，消息的存储逻辑都是一致的。
+
+就是在发送者将消息发送出去后，消息中心首先将消息存储到本地数据文件、内存数据库或者远程数据库等。再试图将消息发给接收者，成功则将消息从存储中删除，失败则继续尝试尝试发送。
+
+消息中心启动以后，要先检查指定的存储位置是否有未成功发送的消息，如果有，则会先把存储位置中的消息发出去。
+
+一句话：ActiveMQ宕机了，消息不会丢失的机制。
+
+## 8.2 ActiveMQ支持的持久化方式
+
+1. AMQ Message Store(了解)
+2. kahaDB(默认)
+3. JDBC消息存储
+4. LevelDB消息存储
+

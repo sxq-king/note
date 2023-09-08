@@ -19,7 +19,7 @@
 - **内置全局拦截插件**：提供全表 delete 、 update 操作智能分析阻断，也可自定义拦截规则，预防误操作
 
 ## 实战 第一个Mybatis-Plus程序
-### - 1.新建数据库mybatis_plus
+### 1.新建数据库mybatis_plus
 ```
 DROP TABLE IF EXISTS user;
 CREATE TABLE user
@@ -30,7 +30,7 @@ CREATE TABLE user
  email VARCHAR(50) NULL DEFAULT NULL COMMENT '邮箱',
  PRIMARY KEY (id) );
 ```
-### - 2.新建User表
+###  2.新建User表
 ```
 DELETE FROM user; 
  INSERT INTO user (id, name, age, email) VALUES
@@ -40,7 +40,7 @@ DELETE FROM user;
  (4, 'Sandy', 21, 'test4@baomidou.com'), 
  (5, 'Billie', 24, 'test5@baomidou.com');
 ```
-### - 3.创建项目
+### 3.创建项目
 > 一个普通的springboot项目,添加依赖
 ```
         <dependency>
@@ -60,7 +60,7 @@ DELETE FROM user;
         </dependency>
 
 ```
-### - 4.编写application.properties文件(也可用yaml文件)
+###  4.编写application.properties文件(也可用yaml文件)
 ```
 #mysql8以下用这个
 #mysql数据库连接
@@ -77,7 +77,7 @@ serverTimezone=GMT%2B8
 spring.datasource.username=root
 spring.datasource.password=1234
 ```
-### - 5.写个实体类User
+###  5.写个实体类User
 ```
 package com.sxq.mpdemo.entity;
 
@@ -95,7 +95,9 @@ public class User {
 }
 
 ```
-### - 6.写User的Mapper
+
+###  6.写User的Mapper
+
 ```
 package com.sxq.mpdemo.mapper;
 
@@ -112,9 +114,11 @@ import org.springframework.stereotype.Repository;
 public interface UserMapper extends BaseMapper<User> {
 }
 ```
+
 > 继承Mybatis-Plus的BaseMapper,这里面已经写好了很多方法，很方便。
 
-### - 7.测试一下，通过自带的test文件，非常方便
+###  7.测试一下，通过自带的test文件，非常方便
+
 ```
 package com.sxq.mpdemo;
 
@@ -149,8 +153,11 @@ class MpdemoApplicationTests {
 [User(id=1, name=sxq, age=18, email=test1@baomidou.com), User(id=2, name=Jack, age=20, email=test2@baomidou.com), User(id=3, name=Tom, age=28, email=test3@baomidou.com), User(id=4, name=Sandy, age=21, email=test4@baomidou.com), User(id=5, name=Billie, age=24, email=test5@baomidou.com)]
 2021-10-23 16:33:50.311  INFO 27632 --- [ionShutdownHook] com.zaxxer.hikari.HikariDataSource       : HikariPool-1 - Shutdown initiated..
 ```
+
 成功！！！
-- 结束了？加个日志在application.properties
+结束了？加个日志在application.properties
+
+
 ```
 #mysql数据库连接
 spring.datasource.driver-class-name=com.mysql.jdbc.Driver
@@ -178,10 +185,13 @@ Closing non transactional SqlSession [org.apache.ibatis.session.defaults.Default
 [User(id=1, name=sxq, age=18, email=test1@baomidou.com), User(id=2, name=Jack, age=20, email=test2@baomidou.com), User(id=3, name=Tom, age=28, email=test3@baomidou.com), User(id=4, name=Sandy, age=21, email=test4@baomidou.com), User(id=5, name=Billie, age=24, email=test5@baomidou.com)]
 
 ```
-> 连查询的sql语句都给你找出来
+
+连查询的sql语句都给你找出来
 
 ## 实现添加操作
-### - test中新建addUser方法
+
+### test中新建addUser方法
+
 ```
  //添加操作
     @Test
@@ -248,7 +258,7 @@ ASSING_UUID:mp自带策略
 > 原本实现的方式通过set方式，将属性值注入。mp简化了这个操作通过自动填充。
 
 ### 自动填充实现方式
-- 1.在实体类中进行自动填充属性添加注解
+1.在实体类中进行自动填充属性添加注解
 ```
  /**
      * create_time
@@ -263,7 +273,7 @@ ASSING_UUID:mp自带策略
     @TableField(fill = FieldFill.INSERT_UPDATE)
     private Date updateTime;
 ```
-- 2.创建类，实现MetaObjectHandler实现接口里面的方法
+ 2.创建类，实现MetaObjectHandler实现接口里面的方法
 ```
 package com.sxq.mpdemo.Handler;
 
@@ -321,6 +331,7 @@ public class MyMetaObjectHandler implements MetaObjectHandler {
     
 - 3.配置乐观锁插件
 #新建一个config包，在里面新建MpConfig配置类
+
 ```
 package com.sxq.mpdemo.config;
 
@@ -363,6 +374,7 @@ public class MpConfig {
 ```
 - 4.测试乐观锁
 注意：乐观锁触发要先查再改
+
 ```
 	/**
      * 测试乐观锁
@@ -527,6 +539,8 @@ import org.springframework.context.annotation.Configuration;
 }
 ```
 - 2.编写分页代码，直接new Page对象，传入两个参数：当前页和每页显示的记录数
+
+
 ```
      /**
      * 分页查询测试
@@ -586,8 +600,10 @@ Closing non transactional SqlSession [org.apache.ibatis.session.defaults.Default
 
 ```
 #### -  批量删除
+
 > int results = userMapper.deleteBatchIds(Arrays.asList(2, 3, 4));
 #### - 简单条件删除
+
 ```
  /**
      * 物理删除-简单条件删除
@@ -602,10 +618,13 @@ Closing non transactional SqlSession [org.apache.ibatis.session.defaults.Default
     }
 ```
 ### 逻辑删除
+
 > 假删除，将对应数据中代表是否被删除字段转改修改为"被删除状态",之后在数据库中仍然可以看到此条数据
 
 - 1.在数据库中加入deleted(删除状态)字段
 - 2.实体类上添加deleted字段并加上注解@TableLogic和@TableField(fill = FieldFill.INSERT)
+
+
 ```
     /**
      * @TableField(fill = FieldFill.INSERT):这个注解可以通过数据库默认填充0来替换
@@ -615,6 +634,8 @@ Closing non transactional SqlSession [org.apache.ibatis.session.defaults.Default
     private Integer deleted;
 ```
 - 3.元对象处理器接口添加deleted的insert默认值
+
+
 ```
 package com.sxq.mpdemo.Handler;
 
@@ -657,6 +678,8 @@ import java.util.Date;
 
 ```
 - 4.application.properties加入配置。可不加使用默认即可
+
+
 ```
 存在就默认为0，删除就为1
 mybatis-plus.global-config.db-config.logic-delete-value=1 
@@ -664,6 +687,8 @@ mybatis-plus.global-config.db-config.logic-not-delete-value=0
 ```
 
 - 5.直接调用删除方法即可
+
+
 ```
 #最终执行效果，将deleted的值从0变为1
     @Test
@@ -695,6 +720,8 @@ sql性能执行分析，开发环境使用，超过指定时间，停止运行�
 
 ### 使用方式
 - 1.添加依赖
+
+
 ```
     <dependency>
             <groupId>p6spy</groupId>
@@ -703,6 +730,8 @@ sql性能执行分析，开发环境使用，超过指定时间，停止运行�
         </dependency>
 ```
 - 2.修改application.properties文件中的url和driver-class-name
+
+
 ```
 #driver-class-name变成了p6spy的Driver路径
 spring.datasource.driver-class-name=com.p6spy.engine.spy.P6SpyDriver
@@ -710,6 +739,8 @@ spring.datasource.driver-class-name=com.p6spy.engine.spy.P6SpyDriver
 spring.datasource.url=jdbc:p6spy:mysql://localhost:3306/mybatis_plus
 ```
 - 3.在resources目录下编写spy.properties文件
+
+
 ```
 #3.2.1以上使用
 modulelist=com.baomidou.mybatisplus.extension.p6spy.MybatisPlusLogFactory,com.p6spy.engine.outage.P6OutageFactory
@@ -737,7 +768,10 @@ outagedetection=true
 outagedetectioninterval=2
 
 ```
+
 - 使用查询全部结果测试
+
+
 ```
 Creating a new SqlSession
 SqlSession [org.apache.ibatis.session.defaults.DefaultSqlSession@36b310aa] was not registered for synchronization because synchronization is not active
@@ -767,13 +801,17 @@ Closing non transactional SqlSession [org.apache.ibatis.session.defaults.Default
 
 ## mp复杂条件查询
 ## Wrapper：条件构造抽象类，最顶端父类
+
 - AbstractWrapper:用于查询条件封装，生成sql的where条件
 - QueryWrapper:Entity对象封装操作类，不是用lambada语法
 - UpdateWrapper:Update条件封装，用于Entity对象更新操作
 - AbstractLambdaWrapper:Lambda语法使用Wrapper同一处理解析lambda获取column
 - LambdaQueryWrapper:看名称也知道是用于Lambda语法使用的查询Wrapper
 - LambdaUpdateWrapper:Lambda更新封装Wrapper
+
+
 ## 详解
+
 ![image](https://note.youdao.com/yws/api/personal/file/WEBe48868a02dec88818807689bc1fda7ec?method=download&shareKey=0669e0ec7f62b3da8c5044e1358a2aa2)
 
 ## 实例使用

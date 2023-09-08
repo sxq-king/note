@@ -157,9 +157,7 @@ spring.datasource.driver-class-name=com.mysql.jdbc.Driver
 spring.datasource.url=jdbc:mysql://localhost:3306/mybatis_plus
 spring.datasource.username=root
 spring.datasource.password=1234
-
 mybatis-plus.configuration.log-impl=org.apache.ibatis.logging.stdout.StdOutImpl
-
 #再次运行结果
 Creating a new SqlSession
 SqlSession [org.apache.ibatis.session.defaults.DefaultSqlSession@4bafe935] was not registered for synchronization because synchronization is not active
@@ -181,7 +179,6 @@ Closing non transactional SqlSession [org.apache.ibatis.session.defaults.Default
 
 ```
 > 连查询的sql语句都给你找出来
-> 
 
 ## 实现添加操作
 ### - test中新建addUser方法
@@ -197,8 +194,6 @@ Closing non transactional SqlSession [org.apache.ibatis.session.defaults.Default
         System.out.println("insert:"+insert);
 
     }
-    
-    
 返回结果
 Creating a new SqlSession
 SqlSession [org.apache.ibatis.session.defaults.DefaultSqlSession@507b79f7] was not registered for synchronization because synchronization is not active
@@ -220,7 +215,6 @@ Process finished with exit code 0
 > 在代码中没有设置id值，数据库中也没有设置id自增，但是在结果中确有id。**这个id值mp自动生成的，一共有19位**。
 
 > 返回insert的结果是1，代表影响行数，就是新增的一条数据。
-> 
 
 ## 主键策略
 Mybatis-Plus默认的主键策略是:ID_WORKER全局唯一ID
@@ -295,8 +289,6 @@ public class MyMetaObjectHandler implements MetaObjectHandler {
         this.setFieldValByName("createTime",new Date(),metaObject);
         this.setFieldValByName("updateTime",new Date(),metaObject);
     }
-
-
     /**
      * 使用mp实现修改操作，这个方法就会执行
      * @param metaObject
@@ -306,7 +298,6 @@ public class MyMetaObjectHandler implements MetaObjectHandler {
         this.setFieldValByName("updateTime",new Date(),metaObject);
     }
 }
-
 ```
 
 ## 乐观锁
@@ -321,7 +312,7 @@ public class MyMetaObjectHandler implements MetaObjectHandler {
 
 
 ### 具体实现
-```
+
 - 1.在表中添加字段version，作为乐观锁版本号
 
 - 2.对应实体类添加版本号属性
@@ -330,6 +321,7 @@ public class MyMetaObjectHandler implements MetaObjectHandler {
     
 - 3.配置乐观锁插件
 #新建一个config包，在里面新建MpConfig配置类
+```
 package com.sxq.mpdemo.config;
 
 import com.baomidou.mybatisplus.annotation.DbType;
@@ -368,10 +360,11 @@ public class MpConfig {
 
 }
 
-
+```
 - 4.测试乐观锁
 注意：乐观锁触发要先查再改
-/**
+```
+	/**
      * 测试乐观锁
      * 先查再改
      */
@@ -386,7 +379,6 @@ public class MpConfig {
         System.out.println(row);
 
     }
-
 ```
 
 ## mp查询
@@ -395,9 +387,11 @@ public class MpConfig {
 
 ### - 2.根据多个id查询
 >  List<User> users = userMapper.selectBatchIds(Arrays.asList(1l, 2l, 3l));
-### - 3.通过封装map做一个简单的条件查询
+
+### - 3.根据id查询.通过封装map做一个简单的条件查询
+
 ```
-/**
+	/**
      * 通过封装map做一个简单的条件查询
      */
     @Test
@@ -409,8 +403,10 @@ public class MpConfig {
         List<User> users = userMapper.selectByMap(map);
         users.forEach(System.out::println);
     }
-
+```
 #结果
+
+```java
 Creating a new SqlSession
 SqlSession [org.apache.ibatis.session.defaults.DefaultSqlSession@71cb3139] was not registered for synchronization because synchronization is not active
 2021-10-24 18:32:31.381  INFO 3256 --- [           main] com.zaxxer.hikari.HikariDataSource       : HikariPool-1 - Starting...
@@ -426,25 +422,23 @@ Closing non transactional SqlSession [org.apache.ibatis.session.defaults.Default
 User(id=1, name=sxq, age=18, email=test1@baomidou.com, createTime=null, updateTime=null, version=null)
 2021-10-24 18:32:32.600  INFO 3256 --- [ionShutdownHook] com.zaxxer.hikari.HikariDataSource       : HikariPool-1 - Shutdown initiated...
 2021-10-24 18:32:32.603  INFO 3256 --- [ionShutdownHook] com.zaxxer.hikari.HikariDataSource       : HikariPool-1 - Shutdown completed.
+```
 
-```
 ### - 4.分页查询
-```
- /**
+
+```java
+ 	/**
      * 分页查询测试
      */
-    @Test
-    void testPageHelper(){
+        @Test
+        void testPageHelper(){
         //1 new一个Page对象
         //2 传入两个参数：当前页和显示记录数
         Page<User> userPage = new Page<>(1,3);
         //调用map的分页查询方法
         //调用map分页查询的过程中，底层封装，将所有数据都封装到userPage对象中
         userMapper.selectPage(userPage,null);
-
         //通过userPage对象获取分页数据
-
-
         System.out.println(userPage.getCurrent());//获取当前页
         System.out.println(userPage.getRecords());//每页数据list集合
         System.out.println(userPage.getSize());   //每页数据记录数
@@ -454,9 +448,12 @@ User(id=1, name=sxq, age=18, email=test1@baomidou.com, createTime=null, updateTi
         System.out.println(userPage.hasNext());   //是否有下一页
         System.out.println(userPage.hasPrevious());//是否有上一页
 
-    }
-    
+}
+```
+
 #结果
+
+```java
 Creating a new SqlSession
 SqlSession [org.apache.ibatis.session.defaults.DefaultSqlSession@39008c9f] was not registered for synchronization because synchronization is not active
 2021-10-24 19:04:44.075  INFO 22392 --- [           main] com.zaxxer.hikari.HikariDataSource       : HikariPool-1 - Starting...
@@ -485,13 +482,12 @@ true
 false
 2021-10-24 19:04:45.259  INFO 22392 --- [ionShutdownHook] com.zaxxer.hikari.HikariDataSource       : HikariPool-1 - Shutdown initiated...
 2021-10-24 19:04:45.262  INFO 22392 --- [ionShutdownHook] com.zaxxer.hikari.HikariDataSource       : HikariPool-1 - Shutdown completed.
-
 ```
-
 
 ## 分页插件
 使用步骤
-###- 1.配置分页插件 MybatisPlusInterceptor
+ 1.配置分页插件 MybatisPlusInterceptor
+
 ```
 package com.sxq.mpdemo.config;
 
@@ -508,9 +504,9 @@ import org.springframework.context.annotation.Configuration;
  * @author sxq
  * Mybatis-Plus配置类
  */
-@Configuration
-@MapperScan("com.sxq.mpdemo.mapper")
-public class MpConfig {
+  @Configuration
+  @MapperScan("com.sxq.mpdemo.mapper")
+  public class MpConfig {
 
 
     @Bean
@@ -528,11 +524,7 @@ public class MpConfig {
         ==============================================================================
         return mybatisPlusInterceptor;
     }
-
-
 }
-
-
 ```
 - 2.编写分页代码，直接new Page对象，传入两个参数：当前页和每页显示的记录数
 ```
@@ -547,7 +539,7 @@ public class MpConfig {
         //调用map的分页查询方法
         //调用map分页查询的过程中，底层封装，将所有数据都封装到userPage对象中
         userMapper.selectPage(userPage,null);
-
+    
         //通过userPage对象获取分页数据
 
 
@@ -556,10 +548,10 @@ public class MpConfig {
         System.out.println(userPage.getSize());   //每页数据记录数
         System.out.println(userPage.getTotal());  //获取表中所有记录数
         System.out.println(userPage.getPages());  //得到当前的总页数
-
+    
         System.out.println(userPage.hasNext());   //是否有下一页
         System.out.println(userPage.hasPrevious());//是否有上一页
-
+    
     }
 ```
 ## mp删除
@@ -637,20 +629,20 @@ import java.util.Date;
  * Component:交给spring管理
  * 元对象处理
  */
-@Component
-public class MyMetaObjectHandler implements MetaObjectHandler {
+    @Component
+    public class MyMetaObjectHandler implements MetaObjectHandler {
     /**
      * 使用mp实现添加操作，这个方法就会执行
      * @param metaObject
      */
-    @Override
-    public void insertFill(MetaObject metaObject) {
+      @Override
+      public void insertFill(MetaObject metaObject) {
 
         this.setFieldValByName("createTime",new Date(),metaObject);
         this.setFieldValByName("updateTime",new Date(),metaObject);
         this.setFieldValByName("version",1,metaObject);
         **this.setFieldValByName("deleted",0,metaObject);**
-    }
+      }
 
 
     /**

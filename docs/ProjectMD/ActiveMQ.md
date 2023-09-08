@@ -318,21 +318,46 @@ public class MessageListener {
 
 （3）生产者生产时，topic不保存消息它是无状态的不落地，假如无人订阅就去生产，那就是一条废消息，所以，一般先启动消费者再启动生产者。
 
+
+
 ```java
-package com.song.springbootactiviemq.topic;
+// 生产者
+public class JmsProduce_topic {
+    public static final  String ACTIVEMQ_URL = "tcp://121.37.0.16:61616";
+    public static final  String TOPIC_NAME = "topic01";
 
-import org.apache.activemq.ActiveMQConnectionFactory;
+    public static void main(String[] args) throws JMSException {
+        // 1、创建连接工厂，按照给定的URL地址，采用默认的用户名和密码admin
+        ActiveMQConnectionFactory activeMQConnectionFactory = new ActiveMQConnectionFactory(ACTIVEMQ_URL);
+        // 2、通过连接工厂，获得连接对象，并启动
+        Connection connection = activeMQConnectionFactory.createConnection();
+        connection.start();
 
-import javax.jms.*;
-import java.io.IOException;
+        // 3、创建会话session，两个参数，第一个是事务，第二个是签收
+        Session session = connection.createSession(false, Session.AUTO_ACKNOWLEDGE);
+        // 4、创建目的地（具体是队列还是主题topic）
+        Topic topic = session.createTopic(TOPIC_NAME);
+        // 5、创建消息的生产者
+        MessageProducer producer = session.createProducer(topic);
+        // 6、使用messageProducer生产3条消息发送到MQ的队列里面
+        for (int i = 1; i <= 3; i++) {
+            //一个字符串
+            TextMessage textMessage = session.createTextMessage("我是第" + i + "条message！");
+            //
+            producer.send(textMessage);
+        }
+        // 7、关闭资源
+        producer.close();
+        session.close();
+        connection.close();
+        System.out.println("TOPIC--消息发布到MQ完成！");
+    }
+}
 
-/**
- * @author song
- * @version 1.0
- * @date 2023/8/16 9:50
- * @description: TODO
- */
+```
 
+```java
+//消费者
 public class MessageListener_topic {
     public static final String ACTIVEMQ_URL = "tcp://121.37.0.16:61616";
     public static final String TOPIC_NAME = "topic";
@@ -530,7 +555,6 @@ public class JmsProduce_persistence {
         System.out.println("  **** TOPIC_NAME消息发送到MQ完成 ****");
     }
 }
-
 ```
 
 ```java
@@ -603,7 +627,6 @@ if(i == 2){
         }
     }
 }
-
 ```
 
 (2) 消费者开启事务后，执行commit方法，这批消息才算真正的被消费。不执行commit方法，这些消息不会标记已消费，下次还会被消费。执行rollback方法，是不能回滚之前执行过的业务逻辑，但是能够回滚之前的消息，回滚后的消息，下次还会被消费。
@@ -659,7 +682,6 @@ public class Jms_TX_Consumer {
         connection.close();
     }
 }
-
 ```
 
 (3) 问：消费者和生产者需要同时操作事务才行吗？  
@@ -724,7 +746,7 @@ JMS Pub/Sub 模型定义了如何向一个内容节点发布和订阅消息，�
 
 客户端首先向MQ注册一个自己的身份ID识别号，当这个客户端处于离线时，生产者会为这个ID保存所有发送到主题的消息，当客户再次连接到MQ的时候，会根据消费者的ID得到所有当自己处于离线时发送到主题的消息
 
-当持久订阅状态下，不能恢复或重新派送一个未签收的消息。
+当非持久订阅状态下，不能恢复或重新派送一个未签收的消息。
 
 持久订阅才能恢复或重新派送一个未签收的消息。
 

@@ -111,9 +111,12 @@ ctrl+shift+u
 >
 > ctrl + f 局部
 
-9.全局替换 and 局部替换
+## 9.全局替换 and 局部替换
 
 > ctrl + shift + r 全局
 >
 > ctrl + r 局部
 
+## 10.变量大小写转换 
+
+> ctrl + shift + u

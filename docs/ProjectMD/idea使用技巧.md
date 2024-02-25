@@ -117,6 +117,6 @@ ctrl+shift+u
 >
 > ctrl + r 局部
 
-## 10.变量大小写转换 
+## 10.快速跳转到光标上一个位置
 
-> ctrl + shift + u
+> ctrl + alt + <-- 或 ctrl + alt + -->
